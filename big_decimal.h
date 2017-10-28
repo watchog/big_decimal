@@ -41,8 +41,11 @@ class Big_decimal{
 		/*将有小数的实数转为整数并返回小数点的位置，例12.455 返回12455 dot_pos: 3*/
 		static std::string into_integer(std::string s1,int &dot_pos);
 		static std::string divide_v(const std::string s1,const std::string s2,std::string &temp);
+		/*无符号整型转为字符串，例12--->"12"*/
 		static std::string itos(unsigned i);
+		/*divide在调用这个函数前计算的是整型之间的除法，如果之前数有小数需要这个函数重新确认小数点位置*/
 		static std::string move_dot_position(const std::string s,int pos);
+		/*清除字符串数中的无用零*/
 		static void clear_zero(std::string& s1);
 };
 void Big_decimal::clear_zero(std::string& s1)
@@ -443,11 +446,11 @@ std::string Big_decimal::divide(const std::string s1,const std::string s2,int pr
 
 	int i;		/*整数除法小数点对于字符串结尾的位置*/
 	bool flag = false;
-	bool neg1 = is_negative(s1),neg2 = is_negative(s2);
-	std::string st1 = positive(s1);
+	bool neg1 = is_negative(s1),neg2 = is_negative(s2);//确定输入的数是否是正数
+	std::string st1 = positive(s1);			//将s1,s2转为正数
 	std::string st2 = positive(s2);
 	int dot1 = 0,dot2 = 0;
-	st1 = into_integer(st1,dot1);
+	st1 = into_integer(st1,dot1);			//小数转为整数，返回小数点位置
 	st2 = into_integer(st2,dot2);
 	int dot_move = dot1 - dot2;
 	std::string result,temp = st1;
@@ -462,8 +465,8 @@ std::string Big_decimal::divide(const std::string s1,const std::string s2,int pr
 		result += divide_v(st1,st2,temp);
 		st1 = temp;
 	}
-	result = move_dot_position(result,dot_move+i);
-	if(neg1 == neg2)
+	result = move_dot_position(result,dot_move+i);	//确定小数点在数中的位置
+	if(neg1 == neg2)				//同号为正，异号为负
 		return result;
 	else
 		return "-"+result;
