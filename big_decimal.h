@@ -23,7 +23,7 @@ class Big_decimal{
 		static std::string divide(const std::string s1,const std::string s2,int precision);
 	private:
 		/*检查输入数字是否符合要求*/
-		static void check_number(const std::string s);
+		static void check_number(const std::string s,const std::string msg);
 		/*获取小数点在数字中的位置*/
 		static int get_dot_position(const std::string s);
 		/*将字符串反转*/
@@ -31,7 +31,7 @@ class Big_decimal{
 		/*判断是否是负数*/
 		static bool is_negative(std::string s);
 		/*s1所代表的数是不是大于s2所代表的数*/
-		static int is_greater(std::string s1,std::string s2);
+		static int is_greater(const std::string s1,const std::string s2);
 		/*将负数转为正数*/
 		static std::string positive(const std::string s);
 		/*非负实数间加法*/
@@ -40,13 +40,13 @@ class Big_decimal{
 		static std::string subtract_v(const std::string s1,const std::string s2);
 		/*将有小数的实数转为整数并返回小数点的位置，例12.455 返回12455 dot_pos: 3*/
 		static std::string into_integer(std::string s1,int &dot_pos);
-		static std::string divide_v(const std::string s1,const std::string s2,std::string &temp);
 		/*无符号整型转为字符串，例12--->"12"*/
 		static std::string itos(unsigned i);
 		/*divide在调用这个函数前计算的是整型之间的除法，如果之前数有小数需要这个函数重新确认小数点位置*/
 		static std::string move_dot_position(const std::string s,int pos);
 		/*清除字符串数中的无用零*/
 		static void clear_zero(std::string& s1);
+		static std::string mod(const std::string s1,const std::string s2,std::string &temp);
 };
 void Big_decimal::clear_zero(std::string& s1)
 {
@@ -115,7 +115,7 @@ bool Big_decimal::is_negative(std::string s)
 	return false;
 }
 /*返回1:s1 > s2 0:s1 == s2 -1: s1 < s2*/
-int Big_decimal::is_greater(std::string s1,std::string s2)
+int Big_decimal::is_greater(const std::string s1,const std::string s2)
 {
 	int pos1 = get_dot_position(s1);
 	int pos2 = get_dot_position(s2);
@@ -149,16 +149,16 @@ std::string Big_decimal::reverse(std::string s)
 	}
 	return s;
 }
-void Big_decimal::check_number(const std::string s) 
+void Big_decimal::check_number(const std::string s,const std::string msg)
 {
 	bool flag = false;
 	if(s[0] == '.')
-		throw std::runtime_error("Error: "+s+": 首位置不允许出现点。");
+		throw std::runtime_error("Error: "+msg+" "+s+": 首位置不允许出现点。");
 	else if(s[0] == '0' && s[1] != '.'&& s != "0" && s.size() > 1)
-		throw std::runtime_error("Error"+s+": 数字不能以零开头。");
+		throw std::runtime_error("Error"+msg+" "+s+": 数字不能以零开头。");
 	for(int i = 0;i < s.size();i++){
 		if(s[i] == '.'&&flag == true)
-			throw std::runtime_error("Error: "+s+": 位置中出现多余的点。");
+			throw std::runtime_error("Error: "+msg+" "+s+": 位置中出现多余的点。");
 		else if(s[i] == '.' && flag == false){
 			flag = true;
 			continue;
@@ -166,7 +166,7 @@ void Big_decimal::check_number(const std::string s)
 		if(s[i] < '0' || s[i] > '9'){
 			if(i == 0 && s[i] == '-')
 					continue;
-			throw std::runtime_error("Error: "+s+": 位置: "+itos(i)+" 出现非法字符"+s[i]+"。");
+			throw std::runtime_error("Error: "+msg+" "+s+": 位置: "+itos(i)+" 出现非法字符"+s[i]+"。");
 		}
 	}
 }
@@ -230,8 +230,8 @@ std::string Big_decimal::add_v(const std::string s1,const std::string s2)
 }
 std::string Big_decimal::add(const std::string s1,const std::string s2)
 {
-	check_number(s1);
-	check_number(s2);
+	check_number(s1,"add");
+	check_number(s2,"add");
 	bool neg1 = is_negative(s1),neg2 = is_negative(s2);
 
 	if(neg1 == true && neg2 == true){	/*s1,s2都是负数相加*/
@@ -294,7 +294,10 @@ std::string Big_decimal::subtract_v(const std::string s1,const std::string s2)
 				result_decimal += '.';
 				i--;j--;
 			}
-			st1[i-1] = st1[i-1]-1;			/*向高位借一*/
+			int j = i-1;
+			while(st1[j] == '0')
+				st1[j--] = '9';			/*向高位借一*/
+			st1[j] = st1[j]-1;
 		}else{
 			if(st1[i] == '.' && st2[j] == '.')
 				continue;
@@ -315,8 +318,8 @@ std::string Big_decimal::subtract_v(const std::string s1,const std::string s2)
 
 std::string Big_decimal::subtract(const std::string s1,const std::string s2)
 {
-	check_number(s1);		/*数字检查*/
-	check_number(s2);
+	check_number(s1,"subtract");		/*数字检查*/
+	check_number(s2,"subtract");
 	bool neg1 = is_negative(s1),neg2 = is_negative(s2);
 
 	if(neg1 == true && neg2 == true){				/*s1是负数,s2是负数相减*/
@@ -335,8 +338,8 @@ std::string Big_decimal::subtract(const std::string s1,const std::string s2)
 /*实现 12*15 1: 2*15=30,2:1*15*10=150 result:180*/
 std::string Big_decimal::multiply(const std::string s1,const std::string s2)
 {
-	check_number(s1);
-	check_number(s2);
+	check_number(s1,"multiply");
+	check_number(s2,"multiply");
 
 	if(s1 == "0" || s2 == "0")
 		return "0";	
@@ -389,21 +392,32 @@ std::string Big_decimal::itos(unsigned i)
 	}
 	return reverse(result);
 }
+
 //计算s1与s2的余数通过temp返回，计算小于s1 s2的最大倍数作为函数的返回值
-std::string Big_decimal::divide_v(const std::string s1,const std::string s2,std::string &temp)
+std::string Big_decimal::mod(const std::string s1,const std::string s2,std::string &temp)
 {
-	std::string rtemp = s2,pre;
-	for(unsigned i = 1;;i++){
-		if(is_greater(s1,rtemp) == 0){
-			temp = "0";
-			return itos(i);
-		}else if(is_greater(s1,rtemp) == 1){
-			rtemp = add(rtemp,s2);
-		}else if(is_greater(s1,rtemp) == -1){
-			temp = subtract(s1,multiply(s2,itos(i-1)));
-			return itos(i-1);
+	std::string st1 = s1;
+	std::string st2 = s2;
+	std::string multiple = "0",t;
+	int i,size1,size2,gap;
+
+	while(is_greater(st1,st2) != -1){
+		t = "1";
+		while(true){
+			if(is_greater(st1,st2+'0') == 1){
+				st2 += '0';
+				t = multiply(t,"10");
+			}else
+				break;
 		}
+		multiple = add(multiple,t);
+		if(is_greater(st1,st2) != -1)
+			st1 = subtract(st1,st2);
+		st2 = s2;
 	}
+	temp = st1;
+	return multiple;
+
 }
 std::string Big_decimal::move_dot_position(const std::string s,int pos)
 {
@@ -435,8 +449,8 @@ std::string Big_decimal::move_dot_position(const std::string s,int pos)
 }
 std::string Big_decimal::divide(const std::string s1,const std::string s2,int precision)
 {	
-	check_number(s1);
-	check_number(s2);
+	check_number(s1,"divide");
+	check_number(s2,"divide");
 
 	if(s2 == "0")
 		throw std::runtime_error("除数不能为零。");
@@ -462,7 +476,7 @@ std::string Big_decimal::divide(const std::string s1,const std::string s2,int pr
 			i++;
 			st1 += "0";
 		}
-		result += divide_v(st1,st2,temp);
+		result += mod(st1,st2,temp);
 		st1 = temp;
 	}
 	result = move_dot_position(result,dot_move+i);	//确定小数点在数中的位置
