@@ -46,6 +46,7 @@ class Big_decimal{
 		static std::string move_dot_position(const std::string s,int pos);
 		/*清除字符串数中的无用零*/
 		static void clear_zero(std::string& s1);
+		/*返回倍数和余数*/
 		static std::string mod(const std::string s1,const std::string s2,std::string &temp);
 };
 void Big_decimal::clear_zero(std::string& s1)
@@ -54,17 +55,23 @@ void Big_decimal::clear_zero(std::string& s1)
 	int i = 0;
 	bool flag = false;
 	for(i = 0;i < s1.size();i++){
+		if(s1[i] == '-'){
+			result += '-';
+			continue;
+		}
 		if(s1[i] != '0')
 			flag = true;
 		if(s1[i] == '0' && flag == false){
 			if(s1[i] == '0' && s1[i+1] == '.'){
-				result += s1[0];
+				result += s1[i];
 				flag = true;
 			}
 			continue;
 		}
 		result += s1[i];
 	}
+	if(flag == false && s1[s1.size()-1] == '0')
+		result = "0";
 	s1 = result;
 }
 std::string Big_decimal::into_integer(std::string s1,int &dot_pos)
@@ -371,11 +378,29 @@ std::string Big_decimal::multiply(const std::string s1,const std::string s2)
 		result = add_v(result,reverse(temp));/*将这次运算结果加到上次中*/
 	}
 	temp = "";
-	for(int i = result.size()-1;i >= 0;i--){
-		temp += result[i];
-		if(result.size()-i == (dot1 + dot2))
+	int i = result.size()-1;
+	bool flag = false;
+	while(true){				//确定小数点位置
+		if(i >= 0){
+			temp += result[i];
+		}else
+			temp += '0';
+		if((dot1 + dot2) < result.size() && (dot1 + dot2) == result.size()-i){
 			temp += '.';
+			flag = true;
+		}
+		if((dot1 + dot2) >= result.size() && result.size()-i == (dot1 + dot2)){
+			temp += '.';
+			temp += '0';
+			break;
+		}
+		i--;
+		if(flag == true && i < 0)
+			break;
+		if(flag == false && i < 0 && (dot1 + dot2) < result.size())
+			break;
 	}
+
 	if(neg1 == neg2)		/*同号相乘为正，异号为负*/
 		return reverse(temp);
 	else
@@ -468,7 +493,7 @@ std::string Big_decimal::divide(const std::string s1,const std::string s2,int pr
 	st2 = into_integer(st2,dot2);
 	int dot_move = dot1 - dot2;
 	std::string result,temp = st1;
-
+	
 	for(i = 0;is_greater(temp,"0") != 0;){
 		if(i == precision)
 			break;
@@ -480,8 +505,12 @@ std::string Big_decimal::divide(const std::string s1,const std::string s2,int pr
 		st1 = temp;
 	}
 	result = move_dot_position(result,dot_move+i);	//确定小数点在数中的位置
-	if(neg1 == neg2)				//同号为正，异号为负
+	if(neg1 == neg2){				//同号为正，异号为负
+		clear_zero(result);		//清除多余的零
 		return result;
-	else
-		return "-"+result;
+	}else{
+		result = "-"+result;
+		clear_zero(result);
+		return result;
+	}
 }
